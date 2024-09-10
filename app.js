@@ -4,6 +4,8 @@ const cors=require( "cors")
 const bcrypt=require( "bcrypt")
 const jwt=require( "jsonwebtoken")
 const usermodel=require('./models/users')
+
+const adminModel = require("./models/adminmodel")
 let app=express()
 app.use(express.json())
 app.use(cors())
@@ -64,6 +66,49 @@ app.post("/signup",async(req,res)=>{
     )
     
 })
+
+app.post("/adminlogin", (req, res) => {
+    let input = req.body;
+
+    // Default admin credentials
+    const adminEmail = 'admin@gmail.com';
+    const adminPassword = 'admin123';
+
+    // Check if the input matches admin credentials
+    if (input.email === adminEmail && input.password === adminPassword) {
+        // Admin login successful
+        jwt.sign({ email: input.email }, "farmapp", { expiresIn: "1d" }, (error, token) => {
+            if (error) {
+                res.json({ "status": "Token credentials failed" });
+            } else {
+                res.json({ "status": "success", "token": token, "message": "Admin logged in successfully" });
+            }
+        });
+    } else {
+        // Check if the user exists in the database
+        adminModel.find({ name: input.name }).then((response) => {
+            if (response.length > 0) {
+                const validator = bcrypt.compareSync(input.password, response[0].password);
+                if (validator) {
+                    // User login successful
+                    jwt.sign({ email: input.email}, "farmapp", { expiresIn: "1d" }, (error, token) => {
+                        if (error) {
+                            res.json({ "status": "Token credentials failed" });
+                        } else {
+                            res.json({ "status": "success", "token": token });
+                        }
+                    });
+                } else {
+                    res.json({ "status": "Wrong password" });
+                }
+            } else {
+                res.json({ "status": "Username doesn't exist" });
+            }
+        }).catch((err) => {
+            res.json({ "status": "Error occurred", "error": err.message });
+        });
+    }
+});
 
 
 app.listen(3030,()=>{
