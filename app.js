@@ -111,6 +111,27 @@ app.post("/adminlogin", (req, res) => {
 });
 
 
+//view users
+app.post("/view",(req,res)=>{
+    let token =req.headers["token"]
+    jwt.verify(token,"farmapp",(error,decoded)=>{
+        if(error)
+            {
+                res.json({"status":"unauthorised access"})
+            }
+            else{
+                if(decoded){
+                   usermodel.find().then(
+                    (response)=>{
+                        res.json(response)
+                    }
+                ).catch().finally()
+
+            }
+        }
+    })
+    
+})
 
 app.listen(3030,()=>{
     console.log("server started")
